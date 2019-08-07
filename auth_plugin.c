@@ -25,7 +25,7 @@ int mosquitto_auth_security_init(void *user_data, struct mosquitto_opt *opts, in
   PyRun_SimpleString("import sys; sys.path.insert(0, '/home/ubuntu/mqtt/mosq_auth_plugin')");
   myModule = PyImport_ImportModule("auth");
   if(myModule != NULL){
-    ACL_Function = PyObject_GetAttrString(myModule, (char*)"someFunction");
+    ACL_Function = PyObject_GetAttrString(myModule, (char*)"ACLcheck");
     UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
     return 0;
   };
@@ -39,8 +39,9 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
 
     PyObject *topic = PyUnicode_FromString(msg->topic);
     PyObject *clientid = PyUnicode_FromString(mosquitto_client_id(client));
+    PyObject *un = PyUnicode_FromString(mosquitto_client_username(client));
     PyObject *acc = PyLong_FromLong(access);
-    PyObject *myResult = PyObject_CallFunctionObjArgs(ACL_Function, topic, clientid, acc, NULL);
+    PyObject *myResult = PyObject_CallFunctionObjArgs(ACL_Function, topic, clientid, acc, un, NULL);
 
     if(myResult != NULL){
       return MOSQ_ERR_SUCCESS;
