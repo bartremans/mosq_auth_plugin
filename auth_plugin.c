@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <python3.5/Python.h>
+#include <python3.6/Python.h>
 
 #include <mosquitto.h>
 #include <mosquitto_broker.h>
@@ -22,11 +22,11 @@ int mosquitto_auth_security_init(void *user_data, struct mosquitto_opt *opts, in
     };
   };
   */
-  PyRun_SimpleString("import sys; sys.path.insert(0, '/home/pi/mqtt/mosq_auth_plugin')");
+  PyRun_SimpleString("import sys; sys.path.insert(0, '/home/ubuntu/mqtt/mosq_auth_plugin')");
   myModule = PyImport_ImportModule("auth");
   if(myModule != NULL){
     ACL_Function = PyObject_GetAttrString(myModule, (char*)"someFunction");
-    //UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
+    UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
     return 0;
   };
 
@@ -49,7 +49,6 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
     };
 
   } else {
-
     return MOSQ_ERR_PLUGIN_DEFER;
   }
 };
@@ -58,19 +57,15 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
 int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const char *username, const char *password){
   // Username Password get checked when allow_anonymous is False in config.
 
-  return MOSQ_ERR_SUCCESS;
-
-  /*
-  if(UNPWD_Function != NULL){
+ if(UNPWD_Function != NULL){
     PyObject *un = PyUnicode_FromString(username);
     PyObject *pwd = PyUnicode_FromString(password);
     PyObject *unpwd_result = PyObject_CallFunctionObjArgs(UNPWD_Function, un, pwd, NULL);
     if(unpwd_result != NULL){
-      printf("%s", unpwd_result);
       return MOSQ_ERR_SUCCESS;
     };
   };
-  */
+
 };
 
 int mosquitto_auth_plugin_version(void){
