@@ -1,5 +1,18 @@
+import time, hashlib, hmac
+
+def createHash(key, word):
+	# Generate the hash
+	digester = hmac.new(key, word, hashlib.sha1)
+	hs = digester.hexdigest()
+	return hs
+
 def ACLcheck(topic, clientid, acc, username):
-	return True
+	if "tml" in topic:
+		print("ok \n")
+		return True
+	else:
+		print("nok \n")
+		raise Exception('NOK')
 	'''
 	try:
 		print(topic, acc, username, clientid)
@@ -24,5 +37,53 @@ def ACLcheck(topic, clientid, acc, username):
 		return False
 	'''
 def anotherFunction(username, password):
-	print(username, password)
-	return True
+
+	proto_id = username[0]
+	port = "08886"
+
+	secrets = {
+			"2": ["xldke33eny", "lsi23uo78v"]
+		  }
+
+	# Get the secrets
+	try:
+		keys = secrets[proto_id]
+		us_key = bytes(keys[0], "UTF-8")
+		pw_key = bytes(keys[1], "UTF-8")
+	except Exception as e:
+		print("Protocol Identifier Incorrect: ", str(e))
+		return None
+
+	# Create a key
+	try:
+		key = str(time.time())[0:7] + port
+		key = bytes(key, 'UTF-8')
+	except Exception as e:
+		print("Creating Key Failed: ", str(e))
+		return None
+
+	# Get the hash
+	try:
+		signature = createHash(key, us_key)
+		srv_pw = createHash(key, pw_key)
+		# Drop the last chr from the signature
+		signature = str(signature)[:-1]
+		# Add proto_id to reassemble username
+		srv_un = proto_id + signature
+	except Exception as e:
+		print("Reassembling username failed: ", str(e))
+		return None
+
+	# Validate credentials
+	try:
+		if(bytes(username, "UTF-8") != srv_un):
+			print("u ", username, srv_un)
+			return None
+		if(password != srv_pw):
+			print("p ", password, srv_pw)
+			return None
+		else:
+			return True
+	except Exception as e:
+		print("Validating Credentials failed: ", str(e))
+		return None
