@@ -14,16 +14,26 @@ PyObject *UNPWD_Function;
 
 int mosquitto_auth_security_init(void *user_data, struct mosquitto_opt *opts, int opt_count, bool reload){
 
-  return 0;
+  Py_Initialize();
+  /*
+  if(opt_count){
+    for(int i=0; i < opt_count; i++){
+	  printf("%s %s", opts[i].key, opts[i].value);
+    };
+  };
+  */
+  PyRun_SimpleString("import sys; sys.path.insert(0, '/home/ubuntu/mqtt/mosq_auth_plugin')");
+  myModule = PyImport_ImportModule("auth");
+  if(myModule != NULL){
+    ACL_Function = PyObject_GetAttrString(myModule, (char*)"someFunction");
+    UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
+    return 0;
+  };
 
 };
 
 // --- ACL CHECK ---
 int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *client, const struct mosquitto_acl_msg *msg){
-  /*
-  if(myModule != NULL){
-    ACL_Function = PyObject_GetAttrString(myModule, (char*)"ACLcheck");
-  };
 
   if(ACL_Function != NULL){
 
@@ -33,63 +43,28 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
     PyObject *acc = PyLong_FromLong(access);
     PyObject *myResult = PyObject_CallFunctionObjArgs(ACL_Function, topic, clientid, acc, un, NULL);
 
-    Py_XDECREF(topic);
-    Py_XDECREF(clientid);
-    Py_XDECREF(un);
-    Py_XDECREF(acc);
-
     if(myResult != NULL){
-      Py_XDECREF(myResult);
-      Py_XDECREF(ACL_Function);
+	print("ok");
       return MOSQ_ERR_SUCCESS;
-    } else {
-      Py_XDECREF(ACL_Function);
+    } else 
       return MOSQ_ERR_ACL_DENIED;
     };
 
   } else {
-    return MOSQ_ERR_ACL_DENIED;
+    return MOSQ_ERR_PLUGIN_DEFER;
   }
-  */
-  return MOSQ_ERR_SUCCESS;
 };
 
 // --- USERNAME/PASSWORD CHECK ---
 int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const char *username, const char *password){
+  // Username Password get checked when allow_anonymous is False in config.
 
-  PyObject *myModule;
-  PyObject *UNPWD_Function;
-  Py_Initialize();
-
-  PyRun_SimpleString("import sys; sys.path.insert(0, '/home/ubuntu/mqtt/mosq_auth_plugin')");
-  myModule = PyImport_ImportModule("auth");
-
-  // Username Password get checked when allow_anonymous is False in configuration file (main.conf)
-  if(myModule != NULL){
-    UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
-  }
-
-  if(UNPWD_Function != NULL){
+ if(UNPWD_Function != NULL){
     PyObject *un = PyUnicode_FromString(username);
     PyObject *pwd = PyUnicode_FromString(password);
     PyObject *unpwd_result = PyObject_CallFunctionObjArgs(UNPWD_Function, un, pwd, NULL);
-
-    Py_XDECREF(un);
-    Py_XDECREF(pwd);
-
     if(unpwd_result != NULL){
-      Py_XDECREF(unpwd_result);
-      Py_XDECREF(UNPWD_Function);
-      Py_XDECREF(myModule);
-      Py_Finalize();
       return MOSQ_ERR_SUCCESS;
-    } else {
-      printf("failed");
-      Py_XDECREF(unpwd_result);
-      Py_XDECREF(UNPWD_Function);
-      Py_XDECREF(myModule);
-      Py_Finalize();
-      return MOSQ_ERR_AUTH;
     };
   };
 
@@ -108,6 +83,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_opt *opts, i
 };
 
 int mosquitto_auth_security_cleanup(void *user_data, struct mosquitto_opt *opts, int opt_count, bool reload){
+  Py_Finalize();
   return 0;
 };
 
