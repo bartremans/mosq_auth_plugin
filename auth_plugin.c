@@ -62,6 +62,7 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
 // --- USERNAME/PASSWORD CHECK ---
 int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const char *username, const char *password){
 
+  bool validation;
   // Username Password get checked when allow_anonymous is False in configuration file (main.conf)
   if(myModule != NULL){
     UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
@@ -72,32 +73,29 @@ int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const 
     PyObject *pwd = PyUnicode_FromString(password);
     PyObject *unpwd_result = PyObject_CallFunctionObjArgs(UNPWD_Function, un, pwd, NULL);
 
-    PyObject *repr = PyObject_Repr(unpwd_result);
-    PyObject *str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
-    const char *bytes = PyBytes_AS_STRING(str);
-
-    printf("%s %s", bytes, "OK");
-
-    if(strcmp(bytes,"'OK'") == 0){
-        printf("OK: %s", bytes);
+    if(unpwd_result != NULL){
+      PyObject *repr = PyObject_Repr(unpwd_result);
+      PyObject *str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
+      const char *result = PyBytes_AS_STRING(str);
+      Py_XDECREF(repr);
+      Py_XDECREF(str);
+      if(strcmp(result, "'OK'")==0){
+        validation = true;
+      }else{
+        validation = false;
+      }
     }else{
-        printf("NOK: %s, %d", bytes, strcmp(bytes,"VALID"));
+      return MOSQ_ERR_AUTH;
     }
-
-    Py_XDECREF(repr);
-    Py_XDECREF(str);
 
     Py_XDECREF(un);
     Py_XDECREF(pwd);
+    Py_XDECREF(unpwd_result);
+    Py_XDECREF(UNPWD_Function);
 
-    if(unpwd_result != NULL){
-      Py_XDECREF(unpwd_result);
-      Py_XDECREF(UNPWD_Function);
+    if(validation){
       return MOSQ_ERR_SUCCESS;
     } else {
-      printf("failed");
-      Py_XDECREF(unpwd_result);
-      Py_XDECREF(UNPWD_Function);
       return MOSQ_ERR_AUTH;
     };
   };

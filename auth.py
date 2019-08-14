@@ -54,7 +54,7 @@ def anotherFunction(username, password):
 		pw_key = bytes(keys[1], "UTF-8")
 	except Exception as e:
 		print("Protocol Identifier Incorrect: ", str(e))
-		raise Exception("NOK")
+		return "NOK"
 
 	# Create a key
 	try:
@@ -62,7 +62,7 @@ def anotherFunction(username, password):
 		key = bytes(key, 'UTF-8')
 	except Exception as e:
 		print("Creating Key Failed: ", str(e))
-		raise Exception("NOK")
+		return "NOK"
 
 	# Get the hash
 	try:
@@ -74,18 +74,19 @@ def anotherFunction(username, password):
 		srv_un = proto_id + signature
 	except Exception as e:
 		print("Reassembling username failed: ", str(e))
-		raise Exception("NOK")
+		return "NOK"
 
 	# Validate credentials
 	try:
 		if(username != srv_un):
 			print("u:", username, srv_un)
-			raise Exception("NOK")
+			return "NOK"
 		if(password != srv_pw):
 			print("p:", password, srv_pw)
-			raise Exception("NOK")
+			return "NOK"
 		else:
 			return "OK"
 	except Exception as e:
 		print("Validating Credentials failed: ", str(e))
-		raise Exception("NOK")
+		return "NOK"
+
