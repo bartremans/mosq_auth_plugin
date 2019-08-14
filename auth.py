@@ -39,7 +39,6 @@ def ACLcheck(topic, clientid, acc, username):
 	'''
 def anotherFunction(username, password):
 
-
 	print("start unpwd function")
 	proto_id = username[0]
 	port = "08886"
@@ -86,7 +85,7 @@ def anotherFunction(username, password):
 			print("p:", password, srv_pw)
 			raise Exception("NOK")
 		else:
-			return True
+			return "OK"
 	except Exception as e:
 		print("Validating Credentials failed: ", str(e))
 		raise Exception("NOK")

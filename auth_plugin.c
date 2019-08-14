@@ -14,6 +14,11 @@ PyObject *UNPWD_Function;
 
 int mosquitto_auth_security_init(void *user_data, struct mosquitto_opt *opts, int opt_count, bool reload){
 
+  Py_Initialize();
+
+  PyRun_SimpleString("import sys; sys.path.insert(0, '/home/ubuntu/mqtt/mosq_auth_plugin')");
+  myModule = PyImport_ImportModule("auth");
+
   return 0;
 
 };
@@ -57,13 +62,6 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
 // --- USERNAME/PASSWORD CHECK ---
 int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const char *username, const char *password){
 
-  PyObject *myModule;
-  PyObject *UNPWD_Function;
-  Py_Initialize();
-
-  PyRun_SimpleString("import sys; sys.path.insert(0, '/home/ubuntu/mqtt/mosq_auth_plugin')");
-  myModule = PyImport_ImportModule("auth");
-
   // Username Password get checked when allow_anonymous is False in configuration file (main.conf)
   if(myModule != NULL){
     UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
@@ -74,21 +72,32 @@ int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const 
     PyObject *pwd = PyUnicode_FromString(password);
     PyObject *unpwd_result = PyObject_CallFunctionObjArgs(UNPWD_Function, un, pwd, NULL);
 
+    PyObject *repr = PyObject_Repr(unpwd_result);
+    PyObject *str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
+    const char *bytes = PyBytes_AS_STRING(str);
+
+    printf("%s %s", bytes, "OK");
+
+    if(strcmp(bytes,"'OK'") == 0){
+        printf("OK: %s", bytes);
+    }else{
+        printf("NOK: %s, %d", bytes, strcmp(bytes,"VALID"));
+    }
+
+    Py_XDECREF(repr);
+    Py_XDECREF(str);
+
     Py_XDECREF(un);
     Py_XDECREF(pwd);
 
     if(unpwd_result != NULL){
       Py_XDECREF(unpwd_result);
       Py_XDECREF(UNPWD_Function);
-      Py_XDECREF(myModule);
-      Py_Finalize();
       return MOSQ_ERR_SUCCESS;
     } else {
       printf("failed");
       Py_XDECREF(unpwd_result);
       Py_XDECREF(UNPWD_Function);
-      Py_XDECREF(myModule);
-      Py_Finalize();
       return MOSQ_ERR_AUTH;
     };
   };
@@ -108,6 +117,10 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_opt *opts, i
 };
 
 int mosquitto_auth_security_cleanup(void *user_data, struct mosquitto_opt *opts, int opt_count, bool reload){
+
+  Py_XDECREF(myModule);
+  Py_Finalize();
+
   return 0;
 };
 
