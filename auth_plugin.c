@@ -25,7 +25,9 @@ int mosquitto_auth_security_init(void *user_data, struct mosquitto_opt *opts, in
 
 // --- ACL CHECK ---
 int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *client, const struct mosquitto_acl_msg *msg){
-  /*
+
+  bool validation;
+
   if(myModule != NULL){
     ACL_Function = PyObject_GetAttrString(myModule, (char*)"ACLcheck");
   };
@@ -36,27 +38,40 @@ int mosquitto_auth_acl_check(void *user_data, int access, struct mosquitto *clie
     PyObject *clientid = PyUnicode_FromString(mosquitto_client_id(client));
     PyObject *un = PyUnicode_FromString(mosquitto_client_username(client));
     PyObject *acc = PyLong_FromLong(access);
-    PyObject *myResult = PyObject_CallFunctionObjArgs(ACL_Function, topic, clientid, acc, un, NULL);
+    PyObject *acl_result = PyObject_CallFunctionObjArgs(ACL_Function, topic, clientid, acc, un, NULL);
+
+    if(acl_result != NULL){
+      PyObject *repr = PyObject_Repr(acl_result);
+      PyObject *str= PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
+      const char *result = PyBytes_AS_STRING(str);
+      Py_XDECREF(repr);
+      Py_XDECREF(str);
+      if(strcmp(result, "True")==0){
+        validation = true;
+      }else{
+        validation = false;
+      }
+    }else{
+      return MOSQ_ERR_AUTH;
+    }
 
     Py_XDECREF(topic);
     Py_XDECREF(clientid);
     Py_XDECREF(un);
     Py_XDECREF(acc);
+    Py_XDECREF(acl_result);
+    Py_XDECREF(ACL_Function);
 
-    if(myResult != NULL){
-      Py_XDECREF(myResult);
-      Py_XDECREF(ACL_Function);
+    if(validation){
       return MOSQ_ERR_SUCCESS;
     } else {
-      Py_XDECREF(ACL_Function);
       return MOSQ_ERR_ACL_DENIED;
     };
 
   } else {
     return MOSQ_ERR_ACL_DENIED;
   }
-  */
-  return MOSQ_ERR_SUCCESS;
+
 };
 
 // --- USERNAME/PASSWORD CHECK ---
