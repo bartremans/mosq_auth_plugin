@@ -37,7 +37,7 @@ def ACLcheck(topic, clientid, acc, username):
 		print(str(e))
 		return False
 	'''
-def anotherFunction(username, password):
+def UNPWDcheck(username, password):
 
 	print("start unpwd function")
 	proto_id = username[0]
@@ -54,7 +54,7 @@ def anotherFunction(username, password):
 		pw_key = bytes(keys[1], "UTF-8")
 	except Exception as e:
 		print("Protocol Identifier Incorrect: ", str(e))
-		return "NOK"
+		return False
 
 	# Create a key
 	try:
@@ -62,7 +62,7 @@ def anotherFunction(username, password):
 		key = bytes(key, 'UTF-8')
 	except Exception as e:
 		print("Creating Key Failed: ", str(e))
-		return "NOK"
+		return False
 
 	# Get the hash
 	try:
@@ -74,19 +74,19 @@ def anotherFunction(username, password):
 		srv_un = proto_id + signature
 	except Exception as e:
 		print("Reassembling username failed: ", str(e))
-		return "NOK"
+		return False
 
 	# Validate credentials
 	try:
 		if(username != srv_un):
 			print("u:", username, srv_un)
-			return "NOK"
+			return False
 		if(password != srv_pw):
 			print("p:", password, srv_pw)
-			return "NOK"
+			return False
 		else:
-			return "OK"
+			return True
 	except Exception as e:
 		print("Validating Credentials failed: ", str(e))
-		return "NOK"
+		return False
 

@@ -65,7 +65,7 @@ int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const 
   bool validation;
   // Username Password get checked when allow_anonymous is False in configuration file (main.conf)
   if(myModule != NULL){
-    UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"anotherFunction");
+    UNPWD_Function = PyObject_GetAttrString(myModule, (char*)"UNPWDcheck");
   }
 
   if(UNPWD_Function != NULL){
@@ -79,7 +79,7 @@ int mosquitto_auth_unpwd_check(void *user_data, struct mosquitto *client, const 
       const char *result = PyBytes_AS_STRING(str);
       Py_XDECREF(repr);
       Py_XDECREF(str);
-      if(strcmp(result, "'OK'")==0){
+      if(strcmp(result, "True")==0){
         validation = true;
       }else{
         validation = false;
