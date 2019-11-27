@@ -10,4 +10,7 @@ Basic plugin for a Mosquitto Broker that relays the authentication to a Python s
 python3-config --configdir
 ```
 ### Compile plugin
-gcc auth_plugin.c -o auth_plugin.so -shared -lpython3.5 -lm -L /usr/lib/python3.5/config-3.5m-arm-linux-gnueabihf -fPIC -I "../mosquitto/src"
+For example:
+```
+gcc auth_plugin.c -o auth_plugin.so -shared -lpython3.6 -lm -L <configdir> -fPIC -I "../mosquitto/src"
+```
